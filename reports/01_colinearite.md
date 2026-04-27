@@ -1,0 +1,1 @@
+title: "3.1 — Détection de la colinéarité"

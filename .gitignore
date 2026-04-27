@@ -1,0 +1,26 @@
+# R / RStudio
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+
+# R Markdown outputs
+*.html
+*.pdf
+*.docx
+
+# Quarto (au cas où)
+.quarto/
+*_files/
+
+# Data (optionnel: gardez raw/ si vous voulez versionner un petit dataset)
+data/processed/
+
+# renv (on versionne renv.lock, mais pas la librairie)
+renv/library/
+renv/python/
+renv/staging/
+
+# OS
+.DS_Store
+Thumbs.db
