@@ -38,7 +38,7 @@ On parle de colinéarité lorsque deux variables explicatives ont une corrélati
 - `wt` et `disp` : 0,89 (> 0,8) → colinéarité sévère
 - `disp` et `hp` : 0,79 (proche du seuil) → colinéarité suspectée
 
-![Heatmap](figures/heatmap_color.png)
+![Heatmap](figures/65b9ac66-06e6-45b3-8044-51b69104aa47.png)
 
 ---
 
