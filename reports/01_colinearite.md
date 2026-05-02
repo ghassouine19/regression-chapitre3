@@ -147,3 +147,48 @@ Le test de Klein révèle une colinéarité modérée à surveiller entre les va
 - Calculer les facteurs d’inflation de la variance (VIF) pour confirmer le diagnostic  
 - Envisager de supprimer une variable redondante (*wt* ou *disp*)  
 - Utiliser une régression ridge pour stabiliser le modèle  
+
+#### 1.4.2. Facteur d'Inflation de la Variance (VIF) : Calcul matriciel et Tolérance
+
+Pour quantifier précisément la multi-colinéarité, le calcul du Facteur d'Inflation de la Variance (VIF) est incontournable. L'algèbre linéaire démontre que les valeurs du VIF correspondent exactement à la diagonale principale de l'inverse de la matrice de corrélation ($C^{-1}$).
+
+**Tableau 7 : Valeurs du VIF et Tolérance calculées via $C^{-1}$**
+
+| Variable | VIF_Calcule | Tolerance |
+| :--- | :--- | :--- |
+| hp | 2.89 | 0.345 |
+| wt | 5.10 | 0.196 |
+| disp | 8.21 | 0.122 |
+| drat | 2.28 | 0.439 |
+
+Pour mieux appréhender la gravité de la colinéarité, nous l'avons représentée graphiquement par rapport au seuil critique usuel de 5.
+
+**Figure 2 : Niveaux de VIF par variable explicative**
+![Graphique VIF](65b9ac66-06e6-45b3-8044-51b69104aa47.png)
+
+**Interprétation :**
+Les règles empiriques usuelles fixent un seuil critique de VIF à 5 (Tolérance < 0.20) pour une colinéarité forte. Le graphique (Figure 2) met en évidence une colinéarité critique pour deux variables : la cylindrée (`disp`) avec un VIF de 8.21, suivie par le poids (`wt`) avec 5.10. Près de 88% de l'information de la cylindrée (Tolérance de 0.122) est redondante. L'espace explicatif de notre modèle est donc saturé.
+
+#### 1.4.3. Test de la Cohérence des Signes
+
+Pour vérifier l'instabilité des estimateurs, nous confrontons le signe de la corrélation marginale avec le signe du coefficient partiel issu de la régression multiple.
+
+**Tableau 8 : Comparaison des corrélations simples et des coefficients multiples**
+
+| Variable | Correlation_Simple | Coef_Regression | Conflit_Signe |
+| :--- | :--- | :--- | :--- |
+| hp | -0.776 | -0.035 | FALSE |
+| wt | -0.868 | -3.480 | FALSE |
+| disp | -0.848 | 0.004 | TRUE |
+| drat | 0.681 | 1.768 | FALSE |
+
+**Conflit détecté :**
+Le Tableau 8 révèle une aberration majeure concernant la variable `disp` (Cylindrée) :
+1. De manière isolée, la cylindrée et la consommation (`mpg`) ont une corrélation **négative** (-0.848). Ceci est physiquement logique.
+2. Pourtant, dans la régression multiple, le coefficient estimé pour `disp` devient **positif** (+0.004). Le modèle suggère artificiellement qu'augmenter la cylindrée améliore la consommation !
+Cette inversion de signe illustre "l'effet de masque" provoqué par l'interférence colinéaire.
+
+#### 1.5. Conclusion de la détection
+
+**Bilan : Une colinéarité sévère.** Le diagnostic posé sur les données `mtcars` est sans équivoque : les trois approches d'investigation convergent pour désigner la redondance critique du trio `disp`, `wt` et `hp`.
+Dans ces conditions, il est impératif de procéder à un retrait stratégique de certaines variables. Cette optimisation de l'espace explicatif fait l'objet de l'étape de **Sélection de variables** (Groupe A).

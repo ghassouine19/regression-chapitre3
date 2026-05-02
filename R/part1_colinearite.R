@@ -245,3 +245,73 @@ for(k in 1:3) {
     }
   }
 }
+cat("\n======================================================================\n")
+cat(" PARTIE 4 : VIF VIA MATRICE INVERSE ET COHÉRENCE DES SIGNES \n")
+cat("======================================================================\n\n")
+
+# ------------------------------------------------------------------------------
+# 1. FACTEUR D'INFLATION DE LA VARIANCE (VIF) ET TOLÉRANCE
+# ------------------------------------------------------------------------------
+cat("--- 1. Calcul matriciel du VIF via l'inverse de la matrice (C^-1) ---\n")
+
+# On utilise la matrice 'mat_cor' calculée par les camarades plus haut
+C_inv <- solve(mat_cor)
+
+# Le VIF se lit directement sur la diagonale de la matrice inverse
+vif_manuel <- diag(C_inv)
+tolerance <- 1 / vif_manuel
+
+tableau_vif <- data.frame(
+  Variable = names(vif_manuel),
+  VIF_Calcule = round(vif_manuel, 2),
+  Tolerance = round(tolerance, 3)
+)
+
+print(tableau_vif)
+cat("\n[!] INTERPRÉTATION :\n")
+cat("La cylindrée (disp) et le poids (wt) dépassent le seuil critique de 5.\n")
+cat("La colinéarité est SÉVÈRE dans ce modèle.\n\n")
+
+# --- VISUALISATION DU VIF POUR LE RAPPORT ---
+# Création d'un graphique en barres (Rouge si VIF > 5, Bleu sinon)
+couleurs_vif <- ifelse(tableau_vif$VIF_Calcule > 5, "firebrick", "steelblue")
+
+# Pour que le graphique s'affiche correctement, on ouvre une nouvelle fenêtre graphique
+barplot(tableau_vif$VIF_Calcule, 
+        names.arg = tableau_vif$Variable, 
+        col = couleurs_vif, 
+        main = "Figure 2 : Niveaux de VIF par variable explicative", 
+        ylab = "Valeur du VIF",
+        ylim = c(0, max(tableau_vif$VIF_Calcule) + 2))
+
+abline(h = 5, col = "red", lwd = 2, lty = 2)
+legend("topright", legend=c("VIF Acceptable (< 5)", "VIF Critique (> 5)"), 
+       fill=c("steelblue", "firebrick"))
+
+# ------------------------------------------------------------------------------
+# 2. TEST DE LA COHÉRENCE DES SIGNES
+# ------------------------------------------------------------------------------
+cat("--- 2. Test de la Cohérence des Signes (L'aberration physique) ---\n")
+
+# A. Corrélation simple (Relation directe entre X et Y)
+X_matrix <- mtcars[, c("hp", "wt", "disp", "drat")]
+corr_simples <- cor(X_matrix, mtcars$mpg)
+
+# B. Coefficients du modèle global (Régression multiple)
+modele_global <- lm(mpg ~ hp + wt + disp + drat, data = mtcars)
+coef_multiples <- coef(modele_global)[-1] # On enlève la constante
+
+tableau_signes <- data.frame(
+  Variable = names(coef_multiples),
+  Corr_Simple = round(corr_simples, 3),
+  Coef_Multiple = round(coef_multiples, 3)
+)
+
+# On vérifie si les signes sont opposés
+tableau_signes$Conflit_Signe <- sign(tableau_signes$Corr_Simple) != sign(tableau_signes$Coef_Multiple)
+
+print(tableau_signes)
+cat("\n[!] ALERTE ROUGE DÉTECTÉE :\n")
+cat("La variable 'disp' (Cylindrée) a une corrélation simple NÉGATIVE avec la consommation (mpg),\n")
+cat("mais son coefficient dans la régression multiple devient POSITIF.\n")
+cat("C'est l'illustration parfaite de l'instabilité causée par la colinéarité !\n")
