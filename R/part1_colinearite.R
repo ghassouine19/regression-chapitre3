@@ -59,6 +59,7 @@ for(i in 1:length(coeff)) {
 # -------------------------------------------------
 # 4. Visualisation (heatmap)
 # -------------------------------------------------
+install.packages("corrplot")
 library(corrplot)
 corrplot(cor_matrix, method = "color", type = "upper", 
          diag = FALSE, tl.col = "black", tl.srt = 45,
