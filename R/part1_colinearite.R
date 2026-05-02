@@ -280,7 +280,7 @@ couleurs_vif <- ifelse(tableau_vif$VIF_Calcule > 5, "firebrick", "steelblue")
 barplot(tableau_vif$VIF_Calcule, 
         names.arg = tableau_vif$Variable, 
         col = couleurs_vif, 
-        main = "Figure 2 : Niveaux de VIF par variable explicative", 
+        main = "Figure 2 : Niveaux de VIF par variable explicative ", 
         ylab = "Valeur du VIF",
         ylim = c(0, max(tableau_vif$VIF_Calcule) + 2))
 
