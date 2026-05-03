@@ -245,6 +245,25 @@ for(k in 1:3) {
     }
   }
 }
+
+# ==============================================================================
+# PARTIE 3 : FACTEUR D'INFLATION DE LA VARIANCE (VIF STANDARD)
+# ==============================================================================
+cat("\n======================================================================\n")
+cat(" PARTIE 3 : CALCUL DU VIF VIA LE PACKAGE 'CAR' \n")
+cat("======================================================================\n\n")
+
+# Chargement du package car (à installer si besoin)
+library(car)
+
+# Calcul du VIF avec la fonction standard sur le modèle global
+# (Le modèle 'regression' a déjà été créé à l'Étape 1 par la personne 2)
+vif_standard <- vif(regression)
+
+cat("Valeurs du VIF (Méthode automatique) :\n")
+print(round(vif_standard, 2))
+cat("\nCes valeurs vont être vérifiées mathématiquement dans la Partie 4.\n")
+
 cat("\n======================================================================\n")
 cat(" PARTIE 4 : VIF VIA MATRICE INVERSE ET COHÉRENCE DES SIGNES \n")
 cat("======================================================================\n\n")
