@@ -129,7 +129,7 @@ Pour quantifier précisément la multi-colinéarité, le calcul du Facteur d'Inf
 Pour mieux appréhender la gravité de la colinéarité, nous l'avons représentée graphiquement par rapport au seuil critique usuel de 5.
 
 **Figure 2 : Niveaux de VIF par variable explicative**
-![Graphique VIF](Rplot.png)
+![Graphique VIF](figures/Rplot.png)
 
 **Interprétation :**
 Les règles empiriques usuelles fixent un seuil critique de VIF à 5 (Tolérance < 0.20) pour une colinéarité forte. Le graphique (Figure 2) met en évidence une colinéarité critique pour deux variables : la cylindrée (`disp`) avec un VIF de 8.21, suivie par le poids (`wt`) avec 5.10. Près de 88% de l'information de la cylindrée (Tolérance de 0.122) est redondante. L'espace explicatif de notre modèle est donc saturé.
