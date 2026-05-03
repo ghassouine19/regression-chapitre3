@@ -72,52 +72,17 @@ Le script complet est dans R/part1_colinearite.R.
 
 ### Principe du test
 
-Le test de Klein compare le coefficient de détermination du modèle global \(R^2\) avec les carrés des corrélations entre variables explicatives \(r^2_{x_i x_j}\). La règle est la suivante :
+Le test de Klein compare le coefficient de détermination du modèle global \(R^2\) avec les carrés des corrélations entre variables explicatives rᵢⱼ². La règle est la suivante :
 
-- Si \( r^2_{x_i x_j} > R^2 \) → **colinéarité forte** détectée  
-- Si \( r^2_{x_i x_j} \) est proche de \( R^2 \) → **colinéarité modérée** à surveiller  
+- Si  rᵢⱼ² > R² \) → **colinéarité forte** détectée  
+- Si rᵢⱼ² est proche de R² → **colinéarité modérée** à surveiller  
 
----
-
-### Mise en œuvre dans R
-
-    # TEST DE KLEIN POUR DÉTECTER LA COLINÉARITÉ
-
-    # Régression multiple
-    regression <- lm(mpg ~ hp + wt + disp + drat, data = mtcars)
-    R2 <- summary(regression)$r.squared
-
-    # Matrice des corrélations entre exogènes
-    mat_cor <- cor(mtcars[, c("hp", "wt", "disp", "drat")])
-    mat_cor_carre <- mat_cor^2
-
-    # Affichage des résultats
-    cat("R² du modèle global =", round(R2, 4), "\n\n")
-    cat("Matrice des r² entre exogènes :\n")
-    print(round(mat_cor_carre, 4))
-
-    # Comparaison R² vs r²
-    cat("\nComparaison détaillée :\n")
-    for(i in 1:4) {
-      for(j in 1:4) {
-        if(i < j) {
-          r2_ij <- mat_cor_carre[i,j]
-          var_i <- rownames(mat_cor)[i]
-          var_j <- colnames(mat_cor)[j]
-          diff <- R2 - r2_ij
-          cat(var_i, "-", var_j, ": r² =", round(r2_ij, 4), 
-              "| R² - r² =", round(diff, 4), "\n")
-        }
-      }
-    }
-
----
 
 ### Interprétation
 
-Aucune paire de variables n’a un \( r^2 \) supérieure au \( R^2 \) (0,8376). Selon le critère de Klein, il n’y a donc pas de colinéarité forte.
+Aucune paire de variables n’a un rᵢⱼ² supérieure au R² (0,8376). Selon le critère de Klein, il n’y a donc pas de colinéarité forte.
 
-Cependant, la paire *wt* (poids) et *disp* (cylindrée) présente un \( r^2 = 0,7885 \), très proche du \( R^2 \) global (différence de seulement 0,0491). Cette forte corrélation (\( r = 0,888 \)) est préoccupante car :
+Cependant, la paire *wt* (poids) et *disp* (cylindrée) présente un r² = 0,7885 , très proche du R² global (différence de seulement 0,0491). Cette forte corrélation  r = 0,888  est préoccupante car :
 
 - Les deux variables mesurent des concepts similaires (taille du véhicule)  
 - Des erreurs-types gonflées peuvent rendre les coefficients instables  
@@ -129,7 +94,7 @@ Ce diagnostic est renforcé par le conflit de signe observé pour la variable *d
 
 ### Conclusion du test de Klein
 
-Le test de Klein révèle une colinéarité modérée à surveiller entre les variables *wt* et *disp*. Bien que le seuil strict ne soit pas atteint, la proximité entre \( r^2 \) et \( R^2 \) indique un risque réel de multicolinéarité.
+Le test de Klein révèle une colinéarité modérée à surveiller entre les variables *wt* et *disp*. Bien que le seuil strict ne soit pas atteint, la proximité entre r² et R² indique un risque réel de multicolinéarité.
 
 ---
 
@@ -138,7 +103,7 @@ Le test de Klein révèle une colinéarité modérée à surveiller entre les va
 - Le test n’est pas un test statistique formel (pas de p-value, pas de seuil universel)  
 - Il ne détecte que la colinéarité par paires  
 - Une colinéarité multiple peut ne pas être détectée  
-- Si \( r^2 > R^2 \), cela indique une très forte colinéarité  
+- Si  r² > R² , cela indique une très forte colinéarité  
 
 ---
 
