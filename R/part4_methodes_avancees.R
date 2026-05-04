@@ -24,14 +24,29 @@
 # ==========================================
 # 🔹 2) DATASET : Oussama
 # ==========================================
-# Étapes :
-# - Charger le dataset mtcars
-# - Définir la variable cible (Y = mpg)
-# - Définir les variables explicatives (X)
-# - Vérifier les données
 
+# Charger le dataset intégré 'mtcars' dans l'environnement R
+data(mtcars)
+df <- mtcars
 
+# Extraire la variable cible (variable dépendante) : mpg (consommation de carburant)
+y <- df$mpg
 
+# Construire le modèle de régression linéaire multiple
+# mpg est la variable à expliquer
+# '.' signifie que toutes les autres variables du dataset sont utilisées comme variables explicatives
+initial_model <- lm(mpg ~ ., data = df)
+
+# Afficher le résumé statistique du modèle
+# Contient :
+# - les coefficients estimés (Estimate)
+# - leur significativité (p-value)
+# - la qualité globale du modèle (R², R² ajusté)
+# - les statistiques de test (t-value, F-statistic)
+summary(initial_model)
+
+# Afficher les graphiques de diagnostic du modèle
+plot(initial_model)
 
 # ==========================================
 # 🔹 3) RÉGRESSION STAGEWISE : Yassine
