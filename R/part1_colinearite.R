@@ -1,22 +1,30 @@
-# Partie 1 (3.1) — Détection de la colinéarité
-# ============================================
-# Partie : Introduction + 3.1.1 Conséquences
-# ============================================
+# ==============================================================================
+# PROJET : PRATIQUE DE LA RÉGRESSION LINÉAIRE MULTIPLE
+# CHAPITRE 3.1 : DÉTECTION DE LA COLINÉARITÉ (GROUPE 1)
+# Base de données : mtcars
+# ==============================================================================
 
-# Charger les données
+# Chargement des données et packages
+# install.packages("corrplot")
+# install.packages("car")
+library(corrplot)
+library(car)
 data(mtcars)
 
-# -------------------------------------------------
-# 1. Matrice de corrélation entre EXOGÈNES uniquement
-# -------------------------------------------------
 exog_vars <- mtcars[, c("hp", "wt", "disp", "drat")]
+Y <- mtcars$mpg
+modele_global <- lm(mpg ~ hp + wt + disp + drat, data = mtcars)
+
+
+cat("\n======================================================================\n")
+cat(" SECTION 1.2 : MATRICE DE CORRÉLATION ET HEATMAP\n")
+cat("======================================================================\n\n")
+
 cor_matrix <- cor(exog_vars)
-print("Matrice de corrélation entre variables exogènes :")
+cat("Matrice de corrélation entre variables exogènes :\n")
 print(round(cor_matrix, 3))
 
-# -------------------------------------------------
-# 2. Mettre en évidence la colinéarité (exemple hp / disp)
-# -------------------------------------------------
+# Mettre en évidence la colinéarité (exemple hp / disp)
 cor_hp_disp <- cor(mtcars$hp, mtcars$disp)
 r2_hp_disp <- cor_hp_disp^2
 
@@ -25,111 +33,96 @@ cat("\nCorrélation entre hp (puissance) et disp (cylindrée) :", round(cor_hp_d
 cat("\nCoefficient de détermination r² :", round(r2_hp_disp, 3))
 
 if(abs(cor_hp_disp) > 0.8) {
-  cat("\n→ Seuil > 0,8 atteint : colinéarité suspectée")
+  cat("\n→ Seuil > 0,8 atteint : colinéarité suspectée\n")
 } else {
-  cat("\n→ Seuil non atteint, mais corrélation modérée à surveiller")
+  cat("\n→ Seuil non atteint, mais corrélation modérée à surveiller\n")
 }
 
-# -------------------------------------------------
-# 3. Illustration des conséquences : signes contradictoires
-# -------------------------------------------------
-modele <- lm(mpg ~ hp + wt + disp + drat, data = mtcars)
-cor_simples <- cor(mtcars$mpg, exog_vars)[1,]
-coeff <- coef(modele)[-1]
-
-cat("\n\n========== TEST DE COHÉRENCE DES SIGNES ==========")
-cat("\nCorrélations simples (mpg vs exogènes) :")
-print(round(cor_simples, 3))
-
-cat("\nCoefficients de la régression multiple :")
-print(round(coeff, 4))
-
-cat("\nVérification des signes :")
-for(i in 1:length(coeff)) {
-  if(sign(cor_simples[i]) != sign(coeff[i])) {
-    cat("\n⚠️ CONFLIT pour", names(coeff)[i], 
-        ": corrélation =", round(cor_simples[i], 3),
-        "(signe", sign(cor_simples[i]), ") vs coefficient =", 
-        round(coeff[i], 4), "(signe", sign(coeff[i]), ")")
-  } else {
-    cat("\n✓", names(coeff)[i], ": signes cohérents")
-  }
-}
-
-# -------------------------------------------------
-# 4. Visualisation (heatmap)
-# -------------------------------------------------
-install.packages("corrplot")
-library(corrplot)
+# Heatmap
 corrplot(cor_matrix, method = "color", type = "upper", 
          diag = FALSE, tl.col = "black", tl.srt = 45,
          title = "Corrélations entre exogènes - mtcars",
          mar = c(0,0,2,0))
 
 
+cat("\n======================================================================\n")
+cat(" SECTION 1.3 : ILLUSTRATION DE L'EFFET NOCIF DE LA COLINÉARITÉ\n")
+cat("======================================================================\n\n")
+
+X_mat <- as.matrix(cbind(1, exog_vars))
+p <- ncol(exog_vars)
+n <- nrow(exog_vars)
+
+# 1.3.1 Colinéarité parfaite
+cat("--- 1.3.1 COLINÉARITÉ PARFAITE ---\n")
+rang_XtX <- qr(t(X_mat) %*% X_mat)$rank
+cat("Rang de X'X :", rang_XtX, "| p + 1 :", p + 1, "\n")
+if (rang_XtX < p + 1) {
+  cat(">>> COLINÉARITÉ PARFAITE DÉTECTÉE : inverse(X'X) n'existe pas.\n")
+} else {
+  cat(">>> Pas de colinéarité parfaite dans mtcars.\n")
+}
+
+# Simulation d'une colinéarité parfaite
+cat("\n--- Simulation d'une colinéarité parfaite ---\n")
+cat("Ajout de la variable hp2 = 2 * hp\n")
+X_parfait <- cbind(exog_vars, hp2 = exog_vars$hp * 2)
+X_mat_parfait <- as.matrix(cbind(1, X_parfait))
+if (qr(t(X_mat_parfait) %*% X_mat_parfait)$rank < ncol(X_parfait) + 1) {
+  cat(">>> COLINÉARITÉ PARFAITE SIMULÉE : inverse(X'X) n'existe pas.\n\n")
+}
+
+# 1.3.2 Colinéarité forte et t de Student
+cat("--- 1.3.2 COLINÉARITÉ FORTE ET t DE STUDENT ---\n")
+XtX <- t(X_mat) %*% X_mat
+
+# Note: Déterminant calculé sur la matrice de corrélation (plus robuste pour l'analyse)
+det_C <- det(cor_matrix)
+cat("Déterminant de la matrice de corrélation (C) :", round(det_C, 5), "\n")
+if (det_C < 0.1) {
+  cat(">>> Déterminant très proche de zéro → colinéarité forte.\n")
+}
+
+# Calcul de la variance et du t de Student manuel
+XtX_inv <- solve(XtX)
+sigma2 <- summary(modele_global)$sigma^2
+var_cov <- sigma2 * XtX_inv
+variances <- diag(var_cov)
+ecarts_types <- sqrt(variances)
+coefs <- coef(modele_global)
+t_student <- coefs / ecarts_types
+
+cat("\nComparaison des t de Student :\n")
+resultats_maths <- data.frame(
+  Coefficient = round(coefs, 4),
+  EcartType = round(ecarts_types, 6),
+  t_Student = round(t_student, 3),
+  p_value = round(summary(modele_global)$coefficients[, 4], 4)
+)
+print(resultats_maths)
+
+if (abs(t_student["disp"]) < 2) {
+  cat("\n>>> t de Student de disp < 2 → disp paraît NON SIGNIFICATIF à tort.\n")
+  cat(">>> C'est l'illustration parfaite de l'effet nocif de la colinéarité !\n")
+}
 
 
+cat("\n======================================================================\n")
+cat(" SECTION 1.4.1 : TEST DE KLEIN\n")
+cat("======================================================================\n\n")
 
-
-# ===========================================
-# PARTIE 2 - TEST DE KLEIN POUR DÉTECTER LA COLINÉARITÉ
-# ===========================================
-# Variables : y = CONSO (mpg)
-#             x1 = hp (puissance)
-#             x2 = wt (poids)
-#             x3 = disp (cylindrée)
-#             x4 = drat (rapport de pont)
-# ===========================================
-
-# ===========================================
-# ÉTAPE 1 : Calcul du R² de la régression multiple
-# ===========================================
-# Régression avec mpg comme variable dépendante
-regression <- lm(mpg ~ hp + wt + disp + drat, data = mtcars)
-R2 <- summary(regression)$r.squared
-
-cat("\n\n=========================================\n")
-cat("ÉTAPE 1 : Coefficient de détermination R²\n")
-cat("=========================================\n")
+R2 <- summary(modele_global)$r.squared
 cat("R² calculé automatiquement =", round(R2, 4), "\n\n")
 
-# ===========================================
-# ÉTAPE 2 : Matrice des corrélations croisées 
-# ===========================================
-
-# Utilisation de la matrice de corrélation calculée dans la Partie 1
-mat_cor <- cor_matrix
-
-cat("=========================================\n")
-cat("ÉTAPE 2 : Matrice des corrélations croisées (r)\n")
-cat("=========================================\n")
-print(round(mat_cor, 4))
-
-# Calcul du carré des corrélations (r²)
-mat_cor_carre <- mat_cor^2
-
-cat("\n=========================================\n")
-cat("ÉTAPE 2 (suite) : Matrice des corrélations croisées au carré (r²)\n")
-cat("=========================================\n")
+mat_cor_carre <- cor_matrix^2
+cat("Matrice des corrélations croisées au carré (r²) :\n")
 print(round(mat_cor_carre, 4))
 
-# ===========================================
-# ÉTAPE 3 : Test de Klein
-# Règle : Colinéarité si R² < r²(xi, xj)
-# ===========================================
-cat("\n=========================================\n")
-cat("ÉTAPE 3 : Test de Klein - Comparaison R² vs r²\n")
-cat("=========================================\n")
-cat("Règle : Il y a colinéarité si R² < r²(xi, xj)\n")
-cat(paste0("R² = ", round(R2, 4), "\n\n"))
-
-# Tableau comparatif
-cat("Comparaison détaillée :\n")
+cat("\nTest de Klein - Comparaison R² vs r² :\n")
 cat("------------------------------------------------------------\n")
 cat(sprintf("%-15s %-15s %-15s %-15s\n", "Variable i", "Variable j", "r²", "R² - r²"))
 cat("------------------------------------------------------------\n")
 
-# Détection des colinéarités
 colin_detect <- FALSE
 colin_paires <- c()
 proches_paires <- c()
@@ -138,145 +131,51 @@ for(i in 1:4) {
   for(j in 1:4) {
     if(i < j) {
       r2_ij <- mat_cor_carre[i,j]
-      var_i <- rownames(mat_cor)[i]
-      var_j <- colnames(mat_cor)[j]
+      var_i <- rownames(cor_matrix)[i]
+      var_j <- colnames(cor_matrix)[j]
       difference <- R2 - r2_ij
       
-      cat(sprintf("%-15s %-15s %-15.4f %-15.4f\n", 
-                  var_i, var_j, r2_ij, difference))
+      cat(sprintf("%-15s %-15s %-15.4f %-15.4f\n", var_i, var_j, r2_ij, difference))
       
-      # Vérification de la colinéarité (r² > R²)
       if(r2_ij > R2) {
         colin_detect <- TRUE
         colin_paires <- c(colin_paires, paste(var_i, "-", var_j, "(r²=", round(r2_ij, 4), ")"))
-      } 
-      # Vérification de la proximité (alerte si r² > 0.8 * R²)
-      else if(r2_ij > 0.8 * R2) {
+      } else if(r2_ij > 0.8 * R2) {
         proches_paires <- c(proches_paires, paste(var_i, "-", var_j, "(r²=", round(r2_ij, 4), ")"))
       }
     }
   }
 }
 
-cat("------------------------------------------------------------\n\n")
-
-# ===========================================
-# ÉTAPE 4 : Résumé des paires problématiques
-# ===========================================
-cat("=========================================\n")
-cat("RÉSUMÉ DES CORRÉLATIONS ÉLEVÉES\n")
-cat("=========================================\n")
-
-if(length(colin_paires) > 0) {
-  cat("\n⚠️ PAIRES AVEC COLINÉARITÉ (r² > R²) :\n")
-  for(paire in colin_paires) {
-    cat("  • ", paire, "\n")
-  }
-}
-
-if(length(proches_paires) > 0) {
-  cat("\n⚠️ PAIRES AVEC CORRÉLATIONS ÉLEVÉES (r² > 0.8 * R²) :\n")
-  for(paire in proches_paires) {
-    cat("  • ", paire, "\n")
-  }
-}
-
-# ===========================================
-# CONCLUSION SELON LE TEST DE KLEIN
-# ===========================================
-cat("\n=========================================\n")
-cat("CONCLUSION DU TEST DE KLEIN\n")
-cat("=========================================\n")
-
-if(colin_detect) {
-  cat("\n❌ PRÉSOMPTION DE COLINÉARITÉ DÉTECTÉE !\n\n")
-  cat("Selon la règle de Klein (R² < r²), certaines paires de variables\n")
-  cat("sont plus corrélées entre elles que la variable dépendante ne l'est\n")
-  cat("avec l'ensemble des prédicteurs. Cela indique une forte colinéarité.\n\n")
-  cat("Paires problématiques :\n")
-  for(paire in colin_paires) {
-    cat("  • ", paire, "\n")
-  }
-  cat("\nSolutions possibles :\n")
-  cat("  1. Supprimer une des variables redondantes\n")
-  cat("  2. Combiner les variables colinéaires (ex: moyenne, ACP)\n")
-  cat("  3. Utiliser une régression ridge ou lasso\n")
-} else if(length(proches_paires) > 0) {
-  cat("\n⚠️ COLINÉARITÉ MODÉRÉE À SURVEILLER !\n\n")
-  cat("Bien que R² > r² pour toutes les paires, certaines corrélations\n")
-  cat("sont très élevées et peuvent causer :\n")
-  cat("  • Des erreurs-types gonflées\n")
-  cat("  • Des coefficients instables\n")
-  cat("  • Des tests de significativité peu fiables\n\n")
-  cat("Paires à surveiller :\n")
-  for(paire in proches_paires) {
-    cat("  • ", paire, "\n")
-  }
-  cat("\nIl est recommandé de vérifier les VIF (Variance Inflation Factors).\n")
-} else {
-  cat("\n✓ PAS DE COLINÉARITÉ FORTE selon Klein\n\n")
-  cat("Mais cela ne garantit pas l'absence de colinéarité.\n")
-  cat("Une analyse complémentaire (VIF) est recommandée.\n")
-  cat("  Toutes les r² sont nettement inférieures à R² =", round(R2, 4), "\n")
-  cat("  Les variables explicatives sont relativement indépendantes.\n")
-}
-
-# ===========================================
-# Information supplémentaire : Les plus fortes corrélations
-# ===========================================
-cat("\n=========================================\n")
-cat("INFORMATIONS SUPPLÉMENTAIRES\n")
-cat("=========================================\n")
-
-# Trouver les 3 plus fortes corrélations (hors diagonale)
-cor_values <- mat_cor
+cat("\nInformations Supplémentaires : Les 3 plus fortes corrélations absolues :\n")
+cor_values <- cor_matrix
 diag(cor_values) <- NA
 max_cors <- sort(abs(cor_values), decreasing = TRUE)[1:3]
-
-cat("\nLes 3 plus fortes corrélations absolues entre variables exogènes :\n")
 for(k in 1:3) {
   for(i in 1:4) {
     for(j in 1:4) {
-      if(i < j && abs(mat_cor[i,j]) == max_cors[k]) {
+      if(i < j && abs(cor_matrix[i,j]) == max_cors[k]) {
         cat(sprintf("  %d. %s - %s : |r| = %.4f (r² = %.4f)\n", 
-                    k, rownames(mat_cor)[i], colnames(mat_cor)[j], 
-                    abs(mat_cor[i,j]), mat_cor[i,j]^2))
+                    k, rownames(cor_matrix)[i], colnames(cor_matrix)[j], 
+                    abs(cor_matrix[i,j]), cor_matrix[i,j]^2))
       }
     }
   }
 }
 
-# ==============================================================================
-# PARTIE 3 : FACTEUR D'INFLATION DE LA VARIANCE (VIF STANDARD)
-# ==============================================================================
+
 cat("\n======================================================================\n")
-cat(" PARTIE 3 : CALCUL DU VIF VIA LE PACKAGE 'CAR' \n")
+cat(" SECTION 1.4.2 : FACTEUR D'INFLATION DE LA VARIANCE (VIF)\n")
 cat("======================================================================\n\n")
 
-# Chargement du package car (à installer si besoin)
-library(car)
-
-# Calcul du VIF avec la fonction standard sur le modèle global
-# (Le modèle 'regression' a déjà été créé à l'Étape 1 par la personne 2)
-vif_standard <- vif(regression)
-
-cat("Valeurs du VIF (Méthode automatique) :\n")
+# Méthode avec le package car
+cat("1. Valeurs du VIF (Méthode automatique via package 'car') :\n")
+vif_standard <- vif(modele_global)
 print(round(vif_standard, 2))
-cat("\nCes valeurs vont être vérifiées mathématiquement dans la Partie 4.\n")
 
-cat("\n======================================================================\n")
-cat(" PARTIE 4 : VIF VIA MATRICE INVERSE ET COHÉRENCE DES SIGNES \n")
-cat("======================================================================\n\n")
-
-# ------------------------------------------------------------------------------
-# 1. FACTEUR D'INFLATION DE LA VARIANCE (VIF) ET TOLÉRANCE
-# ------------------------------------------------------------------------------
-cat("--- 1. Calcul matriciel du VIF via l'inverse de la matrice (C^-1) ---\n")
-
-# On utilise la matrice 'mat_cor' calculée par les camarades plus haut
-C_inv <- solve(mat_cor)
-
-# Le VIF se lit directement sur la diagonale de la matrice inverse
+# Méthode matricielle
+cat("\n2. Calcul matriciel du VIF via l'inverse de la matrice (C^-1) :\n")
+C_inv <- solve(cor_matrix)
 vif_manuel <- diag(C_inv)
 tolerance <- 1 / vif_manuel
 
@@ -285,52 +184,49 @@ tableau_vif <- data.frame(
   VIF_Calcule = round(vif_manuel, 2),
   Tolerance = round(tolerance, 3)
 )
-
 print(tableau_vif)
-cat("\n[!] INTERPRÉTATION :\n")
-cat("La cylindrée (disp) et le poids (wt) dépassent le seuil critique de 5.\n")
-cat("La colinéarité est SÉVÈRE dans ce modèle.\n\n")
 
-# --- VISUALISATION DU VIF POUR LE RAPPORT ---
-# Création d'un graphique en barres (Rouge si VIF > 5, Bleu sinon)
+# Graphe VIF
 couleurs_vif <- ifelse(tableau_vif$VIF_Calcule > 5, "firebrick", "steelblue")
-
-# Pour que le graphique s'affiche correctement, on ouvre une nouvelle fenêtre graphique
 barplot(tableau_vif$VIF_Calcule, 
         names.arg = tableau_vif$Variable, 
         col = couleurs_vif, 
-        main = "Figure 2 : Niveaux de VIF par variable explicative ", 
+        main = "Niveaux de VIF par variable explicative", 
         ylab = "Valeur du VIF",
         ylim = c(0, max(tableau_vif$VIF_Calcule) + 2))
-
 abline(h = 5, col = "red", lwd = 2, lty = 2)
 legend("topright", legend=c("VIF Acceptable (< 5)", "VIF Critique (> 5)"), 
        fill=c("steelblue", "firebrick"))
 
-# ------------------------------------------------------------------------------
-# 2. TEST DE LA COHÉRENCE DES SIGNES
-# ------------------------------------------------------------------------------
-cat("--- 2. Test de la Cohérence des Signes (L'aberration physique) ---\n")
 
-# A. Corrélation simple (Relation directe entre X et Y)
-X_matrix <- mtcars[, c("hp", "wt", "disp", "drat")]
-corr_simples <- cor(X_matrix, mtcars$mpg)
+cat("\n======================================================================\n")
+cat(" SECTION 1.4.3 : COHÉRENCE DES SIGNES (L'ABERRATION)\n")
+cat("======================================================================\n\n")
 
-# B. Coefficients du modèle global (Régression multiple)
-modele_global <- lm(mpg ~ hp + wt + disp + drat, data = mtcars)
-coef_multiples <- coef(modele_global)[-1] # On enlève la constante
+corr_simples <- cor(mtcars$mpg, exog_vars)[1,]
+coef_multiples <- coef(modele_global)[-1]
+
+cat("Vérification des signes (Boucle) :\n")
+for(i in 1:length(coef_multiples)) {
+  if(sign(corr_simples[i]) != sign(coef_multiples[i])) {
+    cat("⚠️ CONFLIT pour", names(coef_multiples)[i], 
+        ": corrélation =", round(corr_simples[i], 3),
+        "(signe", sign(corr_simples[i]), ") vs coefficient =", 
+        round(coef_multiples[i], 4), "(signe", sign(coef_multiples[i]), ")\n")
+  } else {
+    cat("✓", names(coef_multiples)[i], ": signes cohérents\n")
+  }
+}
 
 tableau_signes <- data.frame(
-  Variable = names(coef_multiples),
-  Corr_Simple = round(corr_simples, 3),
-  Coef_Multiple = round(coef_multiples, 3)
+  Correlation_Simple = round(corr_simples, 3),
+  Coef_Regression = round(coef_multiples, 3)
 )
+tableau_signes$Conflit <- sign(tableau_signes$Correlation_Simple) != sign(tableau_signes$Coef_Regression)
 
-# On vérifie si les signes sont opposés
-tableau_signes$Conflit_Signe <- sign(tableau_signes$Corr_Simple) != sign(tableau_signes$Coef_Multiple)
-
+cat("\nTableau Récapitulatif :\n")
 print(tableau_signes)
-cat("\n[!] ALERTE ROUGE DÉTECTÉE :\n")
-cat("La variable 'disp' (Cylindrée) a une corrélation simple NÉGATIVE avec la consommation (mpg),\n")
-cat("mais son coefficient dans la régression multiple devient POSITIF.\n")
-cat("C'est l'illustration parfaite de l'instabilité causée par la colinéarité !\n")
+
+cat("\n======================================================================\n")
+cat(" FIN DU SCRIPT - TRANSITION VERS LA SÉLECTION DE VARIABLES\n")
+cat("======================================================================\n")
