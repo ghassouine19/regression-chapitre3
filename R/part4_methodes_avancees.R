@@ -56,19 +56,44 @@ plot(initial_model)
 # - Minimiser le critère AIC
 
 # ⚙️ Étapes :
-# - Construire modèle complet
-# - Construire modèle vide
-# - Appliquer stepwise (both directions)
+# - Construire modèle complet :
+model_full <- lm(mpg ~ ., data = df)
+# - Construire modèle vide :
+model_null <- lm(mpg ~ 1, data = df)
+# - Appliquer stepwise (both directions) :
+model_step <- step(model_null, 
+                   scope = list(lower = model_null, upper = model_full), 
+                   direction = "both")
+
+
 # - Obtenir modèle final
+summary(model_step)
+
 
 # 📊 Résultats attendus :
-# - Variables sélectionnées
-# - Valeur AIC
+# - Variables sélectionnées :
+formula(model_step)
+# - Valeur AIC : 
+AIC(model_step)
+
 
 # 🧠 Interprétation à faire :
 # - Quelles variables ont été retenues ?
+#Les variables retenus sont : wt, cyl et hp
+
 # - Pourquoi certaines ont été supprimées ?
-# - Comparaison avec modèle complet (AIC, R²)
+#Certaines variables ont été supprimées car elles n'améliorent pas le modèle selon le critère AIC.
+#En particulier, les variables présentant des valeurs p-value ont été considérées comme non significatives.
+#D'autres ont été supprimées en raison de leur redondance, leur information étant déjà prise en compte par d'autres variables du modèle.
+
+
+# - Comparaison avec modèle complet (AIC, R²) :
+AIC(model_full)
+AIC(model_step)
+#La valeur de l'AIC après utilisation de la méthode stepwise est de "155,46", ce qui est inférieur à l'AIC initial de "163,70"
+summary(model_full)$r.squared
+summary(model_step)$r.squared
+#R² reste similaire "0.86 ≈ 0,84", ce qui signifie que nous obtenons des performances similaires avec moins de variables.
 
 
 
