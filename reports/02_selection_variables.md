@@ -21,11 +21,13 @@ Deux questions principales :
 
 Le coefficient de détermination classique, défini par la relation R² = 1 - (SCR / SCT) (où SCR représente la somme des carrés résiduels et SCT la somme des carrés totaux), constitue l'indicateur usuel de la qualité d'ajustement d'un modèle. Toutefois, ce dernier présente une limite méthodologique majeure : sa valeur est mécaniquement croissante (ou au mieux constante) avec l'adjonction de nouvelles variables explicatives, quand bien même ces dernières seraient dépourvues de lien statistique avec la variable dépendante Y.
 
-**R̄² = 1 - [ (SCR / (n - q - 1)) / (SCT / (n - 1)) ] = 1 - ( (n - 1) / (n - q - 1) ) (1 - R²)**
+<div align="center">
+<b>R̄² = 1 - [ (SCR / (n - q - 1)) / (SCT / (n - 1)) ] = 1 - ( (n - 1) / (n - q - 1) ) (1 - R²)</b>
+</div>
 
 Dans cette expression, n désigne le nombre d'observations et q représente le nombre de variables exogènes (hors constante). Contrairement au coefficient standard, le R̄² ne progresse que si l'amélioration du pouvoir explicatif (R²) est suffisamment significative pour compenser la perte d'un degré de liberté.
 
-### Application sur données MTCARS :
+### Application sur données MTCARS
 
 Le coefficient de détermination R2R^2R2 obtenu pour le modèle est égal à _0.8497_, ce qui signifie que le modèle explique environ 84.97 % de la variabilité de la variable dépendante, à savoir la consommation en carburant `mpg`. Cela indique une très bonne qualité d’ajustement, puisque la majorité de l’information contenue dans les données est capturée par les variables explicatives retenues, à savoir le poids `wt`, le temps d’accélération `qsec` et le type de transmission `am`. Toutefois, le R2R^2R2 présente une limite importante, car il tend à augmenter systématiquement avec l’ajout de nouvelles variables, même si celles-ci ne sont pas pertinentes. C’est pourquoi on considère également le coefficient de détermination ajusté, dont la valeur est de _0.8336_.
 Celui-ci tient compte du nombre de variables dans le modèle et pénalise l’ajout de variables inutiles. Dans notre cas, la faible différence entre R2R^2R2 et R2R^2R2 ajusté indique que les variables sélectionnées sont pertinentes et que le modèle ne souffre pas de surajustement. Ainsi, ces résultats confirment la robustesse et la fiabilité du modèle estimé.
@@ -45,8 +47,10 @@ si le « vrai » modèle (au sens de la théorie sous-jacente) fait partie des m
 Les critères d’information sont issus de la théorie de la vraisemblance et de la théorie de l’information. Pour un modèle linéaire avec erreurs normales, l’AIC (Akaike Information Criterion) s’écrit :
 
 <div align="center" style="bold" >
+<b>
 AIC = n _ ln(SCR / n) + 2(q + 1)
 BIC = n _ ln(SCR / n) + ln(n)(q + 1)
+</b>
 </div>
 
 - Plus la valeur est faible → meilleur modèle
@@ -58,12 +62,15 @@ BIC = n _ ln(SCR / n) + ln(n)(q + 1)
 
 Le critère _PRESS (Predicted Residual Error Sum of Squares)_ est une mesure utilisée pour évaluer la capacité de prédiction d’un modèle de régression. Contrairement aux critères comme le R² ou l’AIC, qui évaluent principalement la qualité d’ajustement sur les données d’apprentissage, le PRESS repose sur une approche de validation croisée de type « leave-one-out ». Il consiste à recalculer le modèle en excluant une observation à la fois, puis à mesurer l’erreur de prédiction sur cette observation exclue. Ainsi, le PRESS représente la somme des carrés des erreurs de prédiction obtenues de cette manière. Plus la valeur du PRESS est faible, meilleure est la capacité prédictive du modèle. Dans notre étude, ce critère permet de confirmer que le modèle final sélectionné possède de bonnes performances de généralisation, c’est-à-dire qu’il est capable de prédire correctement de nouvelles observations. Le PRESS constitue donc un outil complémentaire aux autres critères de sélection, en mettant l’accent sur la performance prédictive plutôt que sur l’ajustement aux données observées. Le PRESS est défini par :
 
-**PRESS = Σ (yᵢ - ŷᵢ(-i))²**
-
+<div align="center">
+<b>
+PRESS = Σ (yᵢ - ŷᵢ(-i))²
+</b>
+</div>
 Sur le plan computationnel, il se calcule à partir des résidus ordinaires ε_i et des leviers h_i :
 
-<div align="center">
-PRESS = Σ [ ε_i / (1 - h_i) ]²
+<div align="center"><b>
+PRESS = Σ [ ε_i / (1 - h_i) ]² </b>
 </div>
 
 ### Application sur donnees mtcars
@@ -143,11 +150,11 @@ Ces trois variables mesurent des dimensions genuinement différentes du véhicul
 
 La différence fondamentale entre les deux est que wt + qsec + am représente une triangulation de la consommation sous trois angles indépendants, tandis que wt + cyl + hp représente une double redondance autour du même concept de puissance moteur.
 
-<img src="images/img3.jpeg" width="400"/>
+<img src="images/img3.png" width="400"/>
 
 ---
 
-## Le choix de modele:
+## Le choix de modele
 
 Le choix de **wt + qsec + am** comme modèle final repose sur six arguments convergents.
 
