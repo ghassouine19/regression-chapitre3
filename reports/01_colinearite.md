@@ -153,6 +153,28 @@ Le Tableau 8 révèle une aberration majeure concernant la variable `disp` (Cyli
 2. Pourtant, dans la régression multiple, le coefficient estimé pour `disp` devient **positif** (+0.004). Le modèle suggère artificiellement qu'augmenter la cylindrée améliore la consommation !
 Cette inversion de signe illustre "l'effet de masque" provoqué par l'interférence colinéaire.
 
+#### 1.4.4. Extension à l'ensemble des variables explicatives
+
+Afin de confirmer que la colinéarité n'est pas limitée aux quatre variables précédemment analysées, nous étendons notre analyse à **l'ensemble des variables explicatives** disponibles dans mtcars, à savoir : `cyl`, `disp`, `hp`, `drat`, `wt`, `qsec`, `vs`, `am`, `gear`, `carb` (soit 10 variables). L'endogène reste `mpg`.
+
+**Heatmap des corrélations (toutes les variables explicatives)**
+
+![Heatmap complète](figures/13792796-dc5a-4987-a38a-67d34942ca61.png)
+
+**Observations :**
+
+L'analyse de la matrice de corrélation complète confirme que la colinéarité n'est pas un phénomène isolé, mais une caractéristique généralisée de la base mtcars. On observe plusieurs corrélations très élevées :
+
+| Paire de variables | Corrélation |
+| :--- | :--- |
+| `cyl` (cylindres) et `disp` (cylindrée) | ≈ 0,90 |
+| `disp` (cylindrée) et `wt` (poids) | ≈ 0,89 |
+| `cyl` (cylindres) et `wt` (poids) | ≈ 0,78 |
+| `hp` (puissance) et `disp` (cylindrée) | ≈ 0,79 |
+
+Ces résultats montrent que les variables mesurant la "taille du moteur" (cylindres, cylindrée, poids, puissance) sont toutes fortement liées entre elles. Cette redondance informationnelle est la signature typique d'une colinéarité sévère.
+
+Ainsi, le diagnostic posé initialement sur quatre variables se généralise à l'ensemble des données : **la colinéarité est bien présente dans mtcars** et justifie pleinement la nécessité d'une sélection de variables.
 #### 1.5. Conclusion de la détection
 
 **Bilan : Une colinéarité sévère.** Le diagnostic posé sur les données `mtcars` est sans équivoque : les trois approches d'investigation convergent pour désigner la redondance critique du trio `disp`, `wt` et `hp`.
