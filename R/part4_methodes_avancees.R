@@ -25,28 +25,31 @@
 # 🔹 2) DATASET : Oussama
 # ==========================================
 
-# Charger le dataset intégré 'mtcars' dans l'environnement R
+# Charger le dataset intégré 'mtcars' 
 data(mtcars)
 df <- mtcars
 
-# Extraire la variable cible (variable dépendante) : mpg (consommation de carburant)
+
+# Extraire la variable cible : mpg (consommation de carburant)
 y <- df$mpg
+
 
 # Construire le modèle de régression linéaire multiple
 # mpg est la variable à expliquer
 # '.' signifie que toutes les autres variables du dataset sont utilisées comme variables explicatives
 initial_model <- lm(mpg ~ ., data = df)
 
+
 # Afficher le résumé statistique du modèle
-# Contient :
-# - les coefficients estimés (Estimate)
-# - leur significativité (p-value)
-# - la qualité globale du modèle (R², R² ajusté)
-# - les statistiques de test (t-value, F-statistic)
 summary(initial_model)
+# la régression semble de très bonne qualité puisque que R² = 86,9 %
+# la valeur du p-value indique que le modèle est statistiquement très significatif 
+
 
 # Afficher les graphiques de diagnostic du modèle
 plot(initial_model)
+
+
 
 # ==========================================
 # 🔹 3) RÉGRESSION STAGEWISE : Yassine
@@ -117,6 +120,44 @@ summary(model_step)$r.squared
 # - Y a-t-il des outliers ?
 
 
+# Choisir les variables
+# Y = mpg (consommation)
+# X₁ = wt (poids)
+# X₂ = disp (cylindrée)
+# X₃ = hp (puissance) ← variable à tester
+
+
+# Régression de Y sur (X₁, X₂)
+model_Y <- lm(mpg ~ wt + disp, data = df)
+
+# Résidus de Y
+res_Y <- resid(model_Y)
+
+
+# Régression de X₃ sur (X₁, X₂)
+model_X <- lm(hp ~ wt + disp, data = mtcars)
+
+# Résidus de X
+res_X <- resid(model_X)
+
+# Graphique de régression partielle
+plot(res_X, res_Y,
+     xlab = "Résidus hp",
+     ylab = "Résidus mpg",
+     main = "Régression partielle de hp sur mpg")
+
+abline(lm(res_Y ~ res_X), col = "red")
+# relation faible à modérée car Les points ne sont pas bien alignés autour de la droite
+
+
+# Régression des résidus
+partial_model <- lm(res_Y ~ res_X)
+summary(partial_model)
+
+
+# Modèle complet
+full_model <- lm(mpg ~ wt + disp + hp, data = mtcars)
+summary(full_model)
 
 
 # ==========================================
