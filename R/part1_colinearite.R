@@ -228,5 +228,20 @@ cat("\nTableau Récapitulatif :\n")
 print(tableau_signes)
 
 cat("\n======================================================================\n")
+cat(" SECTION 1.4.4 : Extension à l'ensemble des variables explicatives \n")
+cat("======================================================================\n\n")
+# Heatmap avec toutes les variables explicatives
+
+exog_all <- mtcars[, c("cyl", "disp", "hp", "drat", "wt", 
+                       "qsec", "vs", "am", "gear", "carb")]
+
+cor_all <- cor(exog_all)
+
+corrplot(cor_all, method = "color", type = "upper", diag = FALSE,
+         tl.col = "black", tl.srt = 45,
+         title = "Corrélations entre toutes les variables explicatives - mtcars",
+         mar = c(0,0,2,0))
+
+cat("\n======================================================================\n")
 cat(" FIN DU SCRIPT - TRANSITION VERS LA SÉLECTION DE VARIABLES\n")
 cat("======================================================================\n")
