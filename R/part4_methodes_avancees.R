@@ -55,7 +55,7 @@ plot(initial_model)
 # 🔹 3) RÉGRESSION STAGEWISE : Yassine
 # ==========================================
 
-stagewise <- function(data, y_name, alpha = 0.05) {
+stagewise <- function(data, y_name, alpha = 0.25) {
   
   X_names <- setdiff(names(data), y_name) #obtenir toutes les variables sauf mpg
   
@@ -65,7 +65,18 @@ stagewise <- function(data, y_name, alpha = 0.05) {
   current_residuals <- y
   n <- nrow(data) # nombre d'observations
   
+  step <- 1
+  
+  cat("====================================\n")
+  cat("RÉGRESSION FORWARD STAGEWISE\n")
+  cat("====================================\n\n")
+  
+  cat("Étape 0 : intercept uniquement\n\n")
+  
+  
   repeat {
+    
+    if(length(remaining) == 0) break
     
     # Calculer les corrélations avec les résidus
     cors <- sapply(remaining, function(var) {
@@ -84,7 +95,11 @@ stagewise <- function(data, y_name, alpha = 0.05) {
     t_stat <- r * sqrt(df) / sqrt(1 - r^2) # test de Student
     p_value <- 2 * pt(-abs(t_stat), df = df) #p-value (doit être inférieure à alpha)
     
-    cat("Testing:", best_var, "| p-value =", p_value, "\n") #afficher le résultat : variables et p-value
+    cat(sprintf("──────── Étape %d ────────\n", step))
+    cat(sprintf("Variable candidate : %s\n", best_var))
+    cat(sprintf("Corrélation avec résidus : %.3f\n", r))
+    cat(sprintf("p-value : %.6f\n", p_value))
+    
     
     # Condition d'arrêt, lorsque la p-value est supérieure ou égale à alpha
     if (p_value >= alpha) {
@@ -101,14 +116,36 @@ stagewise <- function(data, y_name, alpha = 0.05) {
     
     # Mettre à jour les résidus pour une utilisation future
     current_residuals <- resid(model)
+    
+    
+    # Statistiques
+    r2_adj <- summary(model)$adj.r.squared
+    aic_val <- AIC(model)
+    
+    cat(sprintf("Modèle courant : %s\n",
+                paste(selected, collapse = " + ")))
+    
+    cat(sprintf("R² ajusté : %.3f\n", r2_adj))
+    cat(sprintf("AIC : %.3f\n\n", aic_val))
+    
+    step <- step + 1
   }
+  
+  
+  cat("====================================\n")
+  cat("MODÈLE FINAL\n")
+  cat("====================================\n")
+  
+  final_model <- if(length(selected) > 0)
+    lm(as.formula(paste(y_name, "~", paste(selected, collapse = " + "))),
+       data = data)
+  else NULL
   
   return(list(
     selected_variables = selected,
-    final_model = if (length(selected) > 0) lm(as.formula(paste(y_name, "~", paste(selected, collapse = "+"))), data = data) else NULL
-  )) #retourner les variables sélectionnées et le modèle final
+    final_model = final_model
+  ))
 }
-
 
 
 result <- stagewise(mtcars, "mpg") #calling the function and stock the result
