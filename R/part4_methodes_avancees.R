@@ -120,27 +120,21 @@ summary(result$final_model)
 # 🔹 4) RÉGRESSIONS PARTIELLES : Oussama
 # ==========================================
 # 🎯 Objectif :
-# - Mesurer l’effet net de chaque variable sur Y
-# - Contrôler les autres variables
+# - Mesurer l’effet net d'une variable sur Y
 
-# ⚙️ Étapes :
-# - Construire modèle complet
-# - Générer les graphiques (avPlots)
+# Afin de faciliter l’interprétation des régressions partielles, nous avons retenu les variables wt, 
+# disp et hp, qui présentent un lien direct avec la consommation du véhicule (mpg).
+# Cette sélection permet d’étudier clairement l’effet additionnel de la puissance (hp) après contrôle 
+# du poids et de la cylindrée.
 
-# 📊 Résultats attendus :
-# - Graphiques de régression partielle
-
-# 🧠 Interprétation à faire :
-# - Quelles variables ont un effet fort ?
-# - Les relations sont-elles linéaires ?
-# - Y a-t-il des outliers ?
-
-
+# -------------  🔷 🚀 Exemple 1 : tester hp   -------------
 # Choisir les variables
 # Y = mpg (consommation)
 # X₁ = wt (poids)
 # X₂ = disp (cylindrée)
 # X₃ = hp (puissance) ← variable à tester
+
+# Question : “Est-ce que hp apporte encore une information utile une fois wt et disp déjà prises en compte ?”
 
 
 # Régression de Y sur (X₁, X₂)
@@ -150,7 +144,7 @@ model_Y <- lm(mpg ~ wt + disp, data = df)
 res_Y <- resid(model_Y)
 
 
-# Régression de X₃ sur (X₁, X₂)
+# Régression de X₃:hp sur (X₁, X₂)
 model_X <- lm(hp ~ wt + disp, data = mtcars)
 
 # Résidus de X
@@ -163,18 +157,93 @@ plot(res_X, res_Y,
      main = "Régression partielle de hp sur mpg")
 
 abline(lm(res_Y ~ res_X), col = "red")
-# relation faible à modérée car Les points ne sont pas bien alignés autour de la droite
+# ➡️ relation faible à modérée car Les points ne sont pas bien alignés autour de la droite
 
 
 # Régression des résidus
 partial_model <- lm(res_Y ~ res_X)
 summary(partial_model)
 
-
 # Modèle complet
 full_model <- lm(mpg ~ wt + disp + hp, data = mtcars)
 summary(full_model)
 
+
+# ➡️ Comparaison du Régression des résidus avec le modèle complet
+
+# La régression des résidus fournit un coefficient estimé égal à -0.03116, identique à celui obtenu 
+# dans le modèle complet, confirmant ainsi les propriétés théoriques de la régression partielle.
+# La p-value associée (0.00843) indique que cet effet est statistiquement significatif.
+# De plus, le coefficient de détermination partiel R²=0.2095 montre que la puissance explique 
+# encore une part non négligeable de la variabilité résiduelle de mpg.
+# Enfin, le modèle complet présente un R²=0.8268, indiquant une très bonne qualité globale d’ajustement.
+
+
+# -------------  🔷 🚀 Exemple 2 : tester qsec   -------------
+
+# résidus de Y2
+model_Y2 <- lm(mpg ~ wt + disp, data = df)
+res_Y2 <- resid(model_Y2)
+
+# résidus de X2
+model_X2 <- lm(qsec ~ wt + disp, data = df)
+res_X2 <- resid(model_X2)
+
+# Régression des résidus 2
+partial_model2 <- lm(res_Y2 ~ res_X2)
+summary(partial_model2)
+# 
+# ➡️ une augmentation de qsec d’une unité entraîne une augmentation moyenne de mpg d’environ 0.93.
+#  p-value: 0.008771
+
+# Après suppression des effets de wt et disp :
+#   
+#   ✔ qsec explique encore environ 20.76% de la variance résiduelle de mpg.
+# 
+# ➡️ Contribution non négligeable.
+
+
+# Graphique de régression partielle 2
+plot(res_X2, res_Y2)
+abline(partial_model2, col="red")
+# ➡️ pente positive → relation positive
+# ➡️ dispersion dispersés → relation faible
+
+
+# Modèle complet 2
+full_model2 <- lm(mpg ~ wt + disp + qsec, data = df)
+summary(full_model2)
+
+
+# ➡️ Comparaison du Régression des résidus avec le modèle complet
+
+# les coefficients sont égaux :
+    # ✔ la régression partielle est validée.
+
+
+# -------------  🔷 🚀 Exemple 3 : tester cyl = nombre de cylindres  -------------
+
+model_Y3 <- lm(mpg ~ wt + disp, data = df)
+res_Y3 <- resid(model_Y3)
+
+model_X3 <- lm(cyl ~ wt + disp, data = df)
+res_X3 <- resid(model_X3)
+
+partial_model3 <- lm(res_Y3 ~ res_X3)
+summary(partial_model3)
+# ➡️ une augmentation d’un cylindre entraîne une diminution moyenne de mpg d’environ 1.78.
+
+plot(res_X3, res_Y3)
+abline(partial_model3, col="red")
+# ➡️ pente negative → relation negative
+# ➡️ dispersion dispersés → relation faible
+
+full_model3 <- lm(mpg ~ wt + disp + cyl, data = df)
+summary(full_model3)
+
+# ➡️ Comparaison du Régression des résidus avec le modèle complet
+# les coefficients sont égaux :
+# ✔ la régression partielle est validée.
 
 # ==========================================
 # 🔹 5) RÉGRESSIONS CROISÉES : Ilham
