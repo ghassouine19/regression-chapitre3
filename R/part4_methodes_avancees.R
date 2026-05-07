@@ -316,6 +316,10 @@ p               <- length(vars_X)       # 3 variables
 
 vif_full <- vif(model_full)
 print(round(vif_full, 2))
+for (nm in names(vif_full)) {
+  flag <- if (vif_full[nm] >= 10) "🔴" else if (vif_full[nm] >= 5) "🟡" else "🟢"
+  cat(sprintf("  %-6s : VIF = %5.2f  %s\n", nm, vif_full[nm], flag))
+}
 
 # RÉSULTAT OBTENU :
 # ╔══════════════════════════════════════════════════════════╗
