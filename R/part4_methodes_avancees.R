@@ -54,51 +54,67 @@ plot(initial_model)
 # ==========================================
 # 🔹 3) RÉGRESSION STAGEWISE : Yassine
 # ==========================================
-# 🎯 Objectif :
-# - Sélection automatique des variables importantes
-# - Minimiser le critère AIC
 
-# ⚙️ Étapes :
-# - Construire modèle complet :
-model_full <- lm(mpg ~ ., data = df)
-# - Construire modèle vide :
-model_null <- lm(mpg ~ 1, data = df)
-# - Appliquer stepwise (both directions) :
-model_step <- step(model_null, 
-                   scope = list(lower = model_null, upper = model_full), 
-                   direction = "both")
+stagewise <- function(data, y_name, alpha = 0.05) {
+  
+  X_names <- setdiff(names(data), y_name) #obtenir toutes les variables sauf mpg
+  
+  selected <- c() #aucune variable sélectionnée pour le moment
+  remaining <- X_names # toutes les variables au début
+  
+  current_residuals <- y
+  n <- nrow(data) # nombre d'observations
+  
+  repeat {
+    
+    # Calculer les corrélations avec les résidus
+    cors <- sapply(remaining, function(var) {
+      cor(current_residuals, data[[var]])
+    })
+    
+    # Sélectionner la meilleure variable (valeurs absolues)
+    best_var <- names(which.max(abs(cors)))
+    r <- cors[best_var] #stocker la corrélation de la variable sélectionnée
+    
+    # Degrés de liberté = n-(nombre de variables sélectionnées + 2)
+    k <- length(selected)
+    df <- n - k - 2
+    
+    
+    t_stat <- r * sqrt(df) / sqrt(1 - r^2) # test de Student
+    p_value <- 2 * pt(-abs(t_stat), df = df) #p-value (doit être inférieure à alpha)
+    
+    cat("Testing:", best_var, "| p-value =", p_value, "\n") #afficher le résultat : variables et p-value
+    
+    # Condition d'arrêt, lorsque la p-value est supérieure ou égale à alpha
+    if (p_value >= alpha) {
+      break
+    }
+    
+    # Ajouter la variable si la p-value est inférieure à alpha
+    selected <- c(selected, best_var)
+    remaining <- setdiff(remaining, best_var) #supprimer la variable de la liste restante pour éviter de la sélectionner à nouveau
+    
+    # Mettre à jour le modèle
+    formula <- as.formula(paste(y_name, "~", paste(selected, collapse = "+")))
+    model <- lm(formula, data = data)
+    
+    # Mettre à jour les résidus pour une utilisation future
+    current_residuals <- resid(model)
+  }
+  
+  return(list(
+    selected_variables = selected,
+    final_model = if (length(selected) > 0) lm(as.formula(paste(y_name, "~", paste(selected, collapse = "+"))), data = data) else NULL
+  )) #retourner les variables sélectionnées et le modèle final
+}
 
 
-# - Obtenir modèle final
-summary(model_step)
 
+result <- stagewise(mtcars, "mpg") #calling the function and stock the result
 
-# 📊 Résultats attendus :
-# - Variables sélectionnées :
-formula(model_step)
-# - Valeur AIC : 
-AIC(model_step)
-
-
-# 🧠 Interprétation à faire :
-# - Quelles variables ont été retenues ?
-#Les variables retenus sont : wt, cyl et hp
-
-# - Pourquoi certaines ont été supprimées ?
-#Certaines variables ont été supprimées car elles n'améliorent pas le modèle selon le critère AIC.
-#En particulier, les variables présentant des valeurs p-value ont été considérées comme non significatives.
-#D'autres ont été supprimées en raison de leur redondance, leur information étant déjà prise en compte par d'autres variables du modèle.
-
-
-# - Comparaison avec modèle complet (AIC, R²) :
-AIC(model_full)
-AIC(model_step)
-#La valeur de l'AIC après utilisation de la méthode stepwise est de "155,46", ce qui est inférieur à l'AIC initial de "163,70"
-summary(model_full)$r.squared
-summary(model_step)$r.squared
-#R² reste similaire "0.86 ≈ 0,84", ce qui signifie que nous obtenons des performances similaires avec moins de variables.
-
-
+result$selected_variables #listing the selected variables
+summary(result$final_model)
 
 # ==========================================
 # 🔹 4) RÉGRESSIONS PARTIELLES : Oussama
