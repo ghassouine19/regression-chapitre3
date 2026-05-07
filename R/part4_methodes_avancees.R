@@ -309,33 +309,39 @@ n               <- nrow(data_X)         # 32 observations
 p               <- length(vars_X)       # 3 variables
 
 
+
 # ------------------------------------------
 # 5a. BASELINE — VIF du modèle COMPLET
-#
-# But : montrer à quel point la multicolinéarité est sévère
-#       quand on inclut toutes les variables sans sélection.
-# Note : ces VIF décrivent le modèle complet uniquement,
-#        ils ne s'appliquent PAS au modèle stagewise.
 # ------------------------------------------
 
-cat("╔══════════════════════════════════════════════════════════╗\n")
-cat("║  BASELINE — VIF MODÈLE COMPLET (Référence d'échec)      ║\n")
-cat("╚══════════════════════════════════════════════════════════╝\n\n")
-
 vif_full <- vif(model_full)
+print(round(vif_full, 2))
 
-for (nm in names(vif_full)) {
-  flag <- if (vif_full[nm] >= 10) "🔴" else if (vif_full[nm] >= 5) "🟡" else "🟢"
-  cat(sprintf("  %-6s : VIF = %5.2f  %s\n", nm, vif_full[nm], flag))
-}
-
-cat("\n")
-cat("→ disp (21.6) et cyl (15.4) présentent une colinéarité critique.\n")
-cat("  wt (15.2) est confondu avec disp et cyl.\n")
-cat("  Conséquence : aucun coefficient individuel significatif\n")
-cat("  malgré R² = 0.869 → symptôme classique de multicolinéarité sévère.\n\n")
-cat(sprintf("  VIF max modèle complet   (10 vars) : %.2f  🔴\n", max(vif_full)))
-cat(sprintf("  VIF max modèle stagewise ( 3 vars) : voir section 5b ci-dessous  🟢\n\n"))
+# RÉSULTAT OBTENU :
+# ╔══════════════════════════════════════════════════════════╗
+# ║  BASELINE — VIF MODÈLE COMPLET (Référence d'échec)      ║
+# ╚══════════════════════════════════════════════════════════╝
+#
+#   cyl    : VIF = 15.37  🔴
+#   disp   : VIF = 21.62  🔴
+#   hp     : VIF =  9.83  🟡
+#   drat   : VIF =  3.37  🟢
+#   wt     : VIF = 15.16  🔴
+#   qsec   : VIF =  7.53  🟡
+#   vs     : VIF =  4.97  🟢
+#   am     : VIF =  4.65  🟢
+#   gear   : VIF =  5.36  🟡
+#   carb   : VIF =  7.91  🟡
+#
+#   VIF max modèle complet (10 vars) : 21.62  🔴
+#
+# 📊 INTERPRÉTATION :
+#   → disp (21.6) et cyl (15.4) présentent une colinéarité CRITIQUE.
+#   → wt (15.2) est fortement confondu avec disp et cyl.
+#   → Conséquence : aucun coefficient individuel significatif
+#     malgré R² = 0.869 → symptôme classique de multicolinéarité sévère.
+#   → Ce modèle complet sert de "référence d'échec" pour montrer pourquoi
+#     la sélection de variables était nécessaire.
 
 
 # ------------------------------------------
@@ -345,17 +351,7 @@ cat(sprintf("  VIF max modèle stagewise ( 3 vars) : voir section 5b ci-dessous 
 #   → On régresse Xᵢ sur les deux autres variables du modèle
 #   → R² auxiliaire → VIF = 1 / (1 - R²aux)         [Éq. 3.13]
 #   → Test F = [R²/(p-1)] / [(1-R²)/(n-p)]           [Éq. 3.14]
-#
-# Lecture des résultats :
-#   Test F significatif (p < 0.05) → dépendance statistiquement détectable
-#   VIF < 3                        → sévérité faible, coefficients stables
-#   → Le test F détecte la dépendance, le VIF en juge la gravité
 # ------------------------------------------
-
-cat("╔══════════════════════════════════════════════════════════╗\n")
-cat("║  NIVEAUX 1 & 2 — VIF LOCAL + TEST F (Éq. 3.13 & 3.14)  ║\n")
-cat("╚══════════════════════════════════════════════════════════╝\n\n")
-cat("Variables du modèle stagewise :", paste(vars_X, collapse = ", "), "\n\n")
 
 for (v in vars_X) {
   others  <- setdiff(vars_X, v)
@@ -374,13 +370,39 @@ for (v in vars_X) {
   cat(sprintf("   Test F(%d,%d) = %.3f | p-value : %.3e\n\n", p - 1, n - p, f_val, p_val_f))
 }
 
-# Résultats obtenus :
-#   wt  : VIF = 2.48 → Test F significatif (p < 0.05), dépendance détectable
-#                       mais inflation de variance faible → acceptable
-#   qsec: VIF = 1.36 → pratiquement indépendante de wt et am
-#   am  : VIF = 2.54 → même constat que wt, dépendance modérée mais acceptable
+# RÉSULTAT OBTENU :
+# ╔══════════════════════════════════════════════════════════╗
+# ║  NIVEAUX 1 & 2 — VIF LOCAL + TEST F (Éq. 3.13 & 3.14)  ║
+# ╚══════════════════════════════════════════════════════════╝
+# Variables du modèle stagewise : wt, qsec, am
 #
-#   Tous les VIF sont bien sous le seuil de 5 → aucune multicolinéarité problématique
+# ── Cible : wt ~ qsec + am
+#    R² aux : 0.5973 | VIF : 2.48  🟢
+#    Test F(2,29) = 21.503 | p-value : 1.875e-06
+#
+# ── Cible : qsec ~ wt + am
+#    R² aux : 0.2670 | VIF : 1.36  🟢
+#    Test F(2,29) = 5.283  | p-value : 1.106e-02
+#
+# ── Cible : am ~ wt + qsec
+#    R² aux : 0.6065 | VIF : 2.54  🟢
+#    Test F(2,29) = 22.351 | p-value : 1.338e-06
+#
+# 📊 INTERPRÉTATION :
+#   wt   : VIF = 2.48 → Test F SIGNIFICATIF (p < 0.05)
+#          Dépendance statistiquement détectable, mais inflation de variance
+#          FAIBLE → acceptable selon le critère VIF < 5.
+#
+#   qsec : VIF = 1.36 → Pratiquement INDÉPENDANTE de wt et am.
+#          La plus "propre" des trois variables sélectionnées.
+#
+#   am   : VIF = 2.54 → Même constat que wt : dépendance modérée mais acceptable.
+#
+#   ✅ Tous les VIF sont bien sous le seuil critique de 5.
+#      → Aucune multicolinéarité problématique dans le modèle stagewise.
+#   📌 Le test F détecte la dépendance ; le VIF en juge la GRAVITÉ.
+#      Ici, les tests F sont significatifs pour wt et am, mais les VIF restent
+#      faibles → la sévérité est jugée ACCEPTABLE.
 
 
 # ------------------------------------------
@@ -388,23 +410,12 @@ for (v in vars_X) {
 #
 # Éq. 3.19 : r_ij|k = -v_ij / sqrt(v_ii * v_jj)
 #   où v_ij sont les éléments de C⁻¹ (inverse de la matrice de corrélation)
-#
-# Corrélation brute    : lien apparent entre deux variables (sans contrôle)
-# Corrélation partielle : lien pur après neutralisation de la 3ème variable
-#
-# Si partielle > brute → effet SUPPRESSEUR :
-#   la 3ème variable masquait une partie du vrai lien entre les deux autres
 # ------------------------------------------
-
-cat("╔══════════════════════════════════════════════════════════╗\n")
-cat("║  NIVEAU 3 — CORRÉLATIONS PARTIELLES (Éq. 3.19)          ║\n")
-cat("╚══════════════════════════════════════════════════════════╝\n\n")
 
 C      <- cor(data_X)
 C_inv  <- solve(C)
 v_diag <- diag(C_inv)
 
-# r_ij|k = -v_ij / sqrt(v_ii * v_jj)
 p_cor <- -C_inv / sqrt(v_diag %*% t(v_diag))
 diag(p_cor) <- 1
 
@@ -413,29 +424,58 @@ print(round(C, 3))
 cat("\nCorrélation PARTIELLE — lien pur après neutralisation (Éq. 3.19) :\n")
 print(round(p_cor, 3))
 
-cat("\n")
-cat("→ Les corrélations partielles sont systématiquement plus fortes\n")
-cat("  que les corrélations brutes → effet SUPPRESSEUR confirmé.\n")
-cat("  Exemple : wt ↔ am passe de -0.692 (brut) à -0.765 (partiel)\n")
-cat("  → am masquait une partie du lien réel entre poids et consommation.\n")
-cat("  Exemple : wt ↔ qsec passe de -0.175 (brut) à -0.476 (partiel)\n")
-cat("  → am absorbait aussi une partie du lien entre poids et vitesse.\n")
-cat("  Ces valeurs (-0.48 à -0.77) restent cohérentes avec les VIF\n")
-cat("  obtenus (max 2.54) — bien sous le seuil critique de 5.\n\n")
+# RÉSULTAT OBTENU :
+# ╔══════════════════════════════════════════════════════════╗
+# ║  NIVEAU 3 — CORRÉLATIONS PARTIELLES (Éq. 3.19)          ║
+# ╚══════════════════════════════════════════════════════════╝
+#
+# Corrélation BRUTE (matrice C) :
+#          wt   qsec     am
+# wt    1.000 -0.175 -0.692
+# qsec -0.175  1.000 -0.230
+# am   -0.692 -0.230  1.000
+#
+# Corrélation PARTIELLE — lien pur après neutralisation (Éq. 3.19) :
+#          wt   qsec     am
+# wt    1.000 -0.476 -0.765
+# qsec -0.476  1.000 -0.494
+# am   -0.765 -0.494  1.000
+#
+# 📊 INTERPRÉTATION — EFFET SUPPRESSEUR :
+#   → Les corrélations partielles sont SYSTÉMATIQUEMENT plus fortes
+#     que les corrélations brutes → EFFET SUPPRESSEUR confirmé pour toutes les paires.
+#
+#   Exemple 1 : wt ↔ am  : -0.692 (brut) → -0.765 (partiel)
+#     → am masquait une partie du lien RÉEL entre poids et consommation.
+#     → Quand on neutralise qsec, la relation wt–am devient plus forte.
+#
+#   Exemple 2 : wt ↔ qsec : -0.175 (brut) → -0.476 (partiel)
+#     → am absorbait aussi une partie du lien entre poids et vitesse au quart de mile.
+#     → L'effet suppresseur de am est le plus marqué.
+#
+#   Exemple 3 : qsec ↔ am : -0.230 (brut) → -0.494 (partiel)
+#     → wt masquait également le lien entre vitesse et type de transmission.
+#
+#   Ces valeurs partielles (-0.48 à -0.77) restent COHÉRENTES avec les VIF
+#   obtenus (max 2.54) — bien sous le seuil critique de 5.
+#   → Pas de multicolinéarité problématique malgré les effets suppresseurs.
 
-cat("╔══════════════════════════════════════════════════════════╗\n")
-cat("║  SYNTHÈSE RÉGRESSIONS CROISÉES                          ║\n")
-cat("╚══════════════════════════════════════════════════════════╝\n\n")
-cat("  Niveau 1 — Numérique   : VIF max = 2.54 (seuil : 5)\n")
-cat("                           → inflation de variance faible et acceptable.\n\n")
-cat("  Niveau 2 — Statistique : Tests F significatifs pour wt et am (p < 0.05)\n")
-cat("                           → dépendances détectables, mais VIF < 3\n")
-cat("                           → sévérité jugée acceptable (c'est le VIF qui tranche).\n\n")
-cat("  Niveau 3 — Géométrique : corrélations partielles > brutes pour toutes les paires\n")
-cat("                           → effet suppresseur : am atténuait les liens wt↔qsec et wt↔am.\n")
-cat("                           → cohérent avec VIF 2.48 / 1.36 / 2.54.\n\n")
-cat("  Conclusion : malgré les dépendances détectées, VIF < 3 confirme\n")
-cat("  que les coefficients de mpg ~", paste(vars_X, collapse = " + "), "sont stables.\n\n")
+
+# SYNTHÈSE RÉGRESSIONS CROISÉES :
+#
+#   Niveau 1 — Numérique   : VIF max = 2.54 (seuil critique : 5)
+#                            → Inflation de variance FAIBLE et acceptable.
+#
+#   Niveau 2 — Statistique : Tests F significatifs pour wt et am (p < 0.05)
+#                            → Dépendances DÉTECTABLES, mais VIF < 3
+#                            → Sévérité jugée ACCEPTABLE (c'est le VIF qui tranche).
+#
+#   Niveau 3 — Géométrique : Corrélations partielles > brutes pour toutes les paires
+#                            → Effet SUPPRESSEUR : am atténuait les liens wt↔qsec et wt↔am.
+#                            → Cohérent avec VIF 2.48 / 1.36 / 2.54.
+#
+#   ✅ CONCLUSION : Malgré les dépendances détectées, VIF < 3 confirme que
+#   les coefficients de mpg ~ wt + qsec + am sont STABLES et fiables.
 
 
 # ==========================================
@@ -452,14 +492,11 @@ cat("  que les coefficients de mpg ~", paste(vars_X, collapse = " + "), "sont st
 # Critère : RMSE (Root Mean Squared Error, en mpg)
 #   → Plus le RMSE est bas, meilleure est la prédiction hors-échantillon
 
-library(boot)
 set.seed(123)
 
 
 # ------------------------------------------
 # 6a. Train / Test 70% / 30%
-#     22 observations pour l'entraînement, 10 pour le test
-#     Limite : sur n=32, le résultat peut varier selon le tirage
 # ------------------------------------------
 
 train_idx <- sample(1:nrow(df), size = floor(0.7 * nrow(df)))
@@ -476,15 +513,23 @@ cat("=== VALIDATION CROISÉE — TRAIN/TEST (70/30) ===\n")
 cat("RMSE Modèle Complet   :", round(rmse_full_tt,  3), "mpg\n")
 cat("RMSE Modèle Stagewise :", round(rmse_stage_tt, 3), "mpg\n")
 cat("→ Stagewise meilleur :", ifelse(rmse_stage_tt < rmse_full_tt, "OUI ✅", "NON ⚠️"), "\n\n")
-# Résultat : Stagewise RMSE (2.131) < Complet RMSE (2.281) → OUI ✅
-# Le modèle à 3 variables prédit mieux que le modèle à 10 variables
+
+# RÉSULTAT OBTENU :
+# === VALIDATION CROISÉE — TRAIN/TEST (70/30) ===
+# RMSE Modèle Complet   : 2.281 mpg
+# RMSE Modèle Stagewise : 2.131 mpg
+# → Stagewise meilleur : OUI ✅
+#
+# 📊 INTERPRÉTATION :
+#   → Le modèle stagewise (3 variables) prédit MIEUX sur l'échantillon test
+#     que le modèle complet (10 variables).
+#   → RMSE stagewise (2.131) < RMSE complet (2.281) : gain de 0.15 mpg.
+#   ⚠️ LIMITE : Avec n=32 observations seulement (22 train / 10 test),
+#     ce résultat est sensible au tirage aléatoire → préférer LOOCV.
 
 
 # ------------------------------------------
 # 6b. LOOCV — Leave-One-Out Cross-Validation
-#     On entraîne 32 modèles en excluant une observation à chaque fois.
-#     Méthode préférée sur ce dataset car plus robuste que le simple split.
-#     delta[1] = MSE moyen → on prend sqrt() pour obtenir le RMSE
 # ------------------------------------------
 
 glm_full  <- glm(mpg ~ .,                  data = df, family = gaussian)
@@ -499,25 +544,34 @@ cat("RMSE Modèle Stagewise :", round(rmse_stage_loo, 3), "mpg\n")
 cat("→ Stagewise meilleur :", ifelse(rmse_stage_loo < rmse_full_loo, "OUI ✅", "NON ⚠️"), "\n")
 cat("→ Gain généralisation :", round((rmse_full_loo - rmse_stage_loo) / rmse_full_loo * 100, 1), "%\n\n")
 
-# Résultats :
-#   Complet   : RMSE LOOCV = 3.490 mpg >> erreur résiduelle (≈2.65)
-#               → écart important = surapprentissage confirmé
-#               10 variables pour 32 observations = trop peu de degrés de liberté
-#   Stagewise : RMSE LOOCV = 2.689 mpg ≈ erreur résiduelle (≈2.46)
-#               → écart faible = le modèle généralise correctement
+# RÉSULTAT OBTENU :
+# === VALIDATION CROISÉE — LOOCV ===
+# RMSE Modèle Complet   : 3.490 mpg
+# RMSE Modèle Stagewise : 2.689 mpg
+# → Stagewise meilleur : OUI ✅
+# → Gain généralisation : 23 %
 #
-#   Gain : 23% de réduction de l'erreur hors-échantillon avec 7 variables de moins
+# 📊 INTERPRÉTATION DÉTAILLÉE :
+#
+#   MODÈLE COMPLET (10 variables) :
+#   → RMSE LOOCV = 3.490 mpg >> Erreur résiduelle ≈ 2.65 mpg
+#   → Écart important entre erreur d'entraînement et erreur hors-échantillon
+#   → SURAPPRENTISSAGE CONFIRMÉ : le modèle "mémorise" les données d'entraînement
+#   → Cause : 10 variables pour seulement 32 observations = trop peu de degrés de liberté
+#
+#   MODÈLE STAGEWISE (3 variables) :
+#   → RMSE LOOCV = 2.689 mpg ≈ Erreur résiduelle ≈ 2.46 mpg
+#   → Écart FAIBLE entre erreur d'entraînement et erreur hors-échantillon
+#   → Le modèle GÉNÉRALISE BIEN : pas de surapprentissage
+#   → 7 variables éliminées = modèle plus parcimonieux et plus robuste
+#
+#   📌 GAIN CLEF : 23% de réduction de l'erreur hors-échantillon
+#      avec 7 variables de moins → le principe de parcimonie est validé.
 
 
 # ==========================================
 # 🔹 7) COMPARAISON DES MODÈLES (ALL TEAM)
 # ==========================================
-# Critères comparés :
-#   R² ajusté  : ajustement aux données (pénalise les variables inutiles)
-#   AIC        : équilibre ajustement / complexité (plus bas = meilleur)
-#   RMSE TT    : erreur sur le jeu de test 70/30
-#   RMSE LOOCV : erreur hors-échantillon robuste (critère principal sur n=32)
-
 
 # ------------------------------------------
 # 7a. Tableau comparatif
@@ -537,20 +591,41 @@ comparison <- data.frame(
 cat("=== TABLEAU COMPARATIF ===\n")
 print(comparison)
 
-# Lecture :
-#   R² ajusté : 0.834 (stagewise) > 0.807 (complet)
-#               → meilleur ajustement avec 7 variables de moins
-#   AIC       : 154.1 (stagewise) < 163.7 (complet)
-#               → meilleur équilibre complexité / performance
-#   RMSE LOOCV: 2.689 (stagewise) < 3.490 (complet)
-#               → meilleure généralisation hors-échantillon
-#   Conclusion : le modèle stagewise domine sur TOUS les critères
+# RÉSULTAT OBTENU :
+# === TABLEAU COMPARATIF ===
+#               Modele Nb_vars R2_ajuste   AIC RMSE_TT RMSE_LOOCV
+# 1  Complet (10 vars)      10     0.807 163.7   2.281      3.490
+# 2 Stagewise (3 vars)       3     0.834 154.1   2.131      2.689
+#
+# 📊 INTERPRÉTATION — LECTURE DU TABLEAU :
+#
+#   R² ajusté :
+#   → 0.834 (stagewise) > 0.807 (complet)
+#   → Le modèle stagewise a un MEILLEUR ajustement aux données
+#     malgré l'utilisation de 7 variables de MOINS.
+#   → Le R² ajusté pénalise l'ajout de variables non informatives :
+#     les 7 variables supplémentaires du modèle complet apportent du bruit.
+#
+#   AIC (Critère d'Information d'Akaike) :
+#   → 154.1 (stagewise) < 163.7 (complet) : différence de 9.6 points
+#   → Règle : ΔAIC > 10 → fort avantage ; 4–7 → avantage considérable
+#   → Différence de 9.6 → avantage CONSIDÉRABLE pour le modèle stagewise
+#   → L'AIC équilibre ajustement et complexité → stagewise gagne.
+#
+#   RMSE Train/Test (70/30) :
+#   → 2.131 (stagewise) < 2.281 (complet)
+#   → Meilleure prédiction sur l'échantillon test.
+#
+#   RMSE LOOCV (critère principal sur n=32) :
+#   → 2.689 (stagewise) < 3.490 (complet) — GAIN de 23%
+#   → Meilleure généralisation hors-échantillon (critère le plus robuste).
+#
+#   ✅ CONCLUSION : Le modèle stagewise DOMINE sur TOUS les critères.
+#      C'est le modèle à retenir.
 
 
 # ------------------------------------------
 # 7b. Visualisation — Barplots AIC et RMSE LOOCV
-#     Rouge = modèle complet | Bleu = modèle stagewise
-#     Pour les deux métriques : plus bas = meilleur
 # ------------------------------------------
 
 par(mfrow = c(1, 2))
@@ -562,7 +637,7 @@ barplot(c(AIC(model_full), AIC(model_stagewise)),
         ylab = "AIC",
         ylim = c(140, 175))
 abline(h = AIC(model_stagewise), lty = 2, col = "steelblue")
-# Barre bleue nettement plus basse → stagewise mieux calibré
+# → La barre bleue (stagewise) est nettement plus basse → meilleur calibrage
 
 barplot(c(rmse_full_loo, rmse_stage_loo),
         names.arg = c("Complet", "Stagewise"),
@@ -571,7 +646,7 @@ barplot(c(rmse_full_loo, rmse_stage_loo),
         ylab = "RMSE (mpg)",
         ylim = c(0, 4))
 abline(h = rmse_stage_loo, lty = 2, col = "steelblue")
-# Barre rouge haute → surapprentissage du modèle complet confirmé
+# → La barre rouge (complet) est haute → surapprentissage confirmé visuellement
 
 par(mfrow = c(1, 1))
 
@@ -580,115 +655,68 @@ par(mfrow = c(1, 1))
 # 🔹 8) CONCLUSION (ALL TEAM)
 # ==========================================
 
-cat("╔══════════════════════════════════════════════════════════╗\n")
-cat("║  CONCLUSION — MODÈLE RETENU                             ║\n")
-cat("╚══════════════════════════════════════════════════════════╝\n\n")
-
 coefs <- coef(model_stagewise)
-cat("Équation du modèle :\n")
-cat(sprintf("  mpg^ = %.3f + (%.3f)*wt + (%.3f)*qsec + (%.3f)*am\n\n",
+cat(sprintf("mpg^ = %.3f + (%.3f)*wt + (%.3f)*qsec + (%.3f)*am\n\n",
             coefs["(Intercept)"], coefs["wt"], coefs["qsec"], coefs["am"]))
 
-cat("Performances du modèle final :\n")
-cat(sprintf("  R² ajusté  : %.3f\n", summary(model_stagewise)$adj.r.squared))
-cat(sprintf("  AIC        : %.1f\n",  AIC(model_stagewise)))
-cat(sprintf("  RMSE LOOCV : %.3f mpg\n\n", rmse_stage_loo))
-
-cat("Interprétation des coefficients :\n")
-cat("  wt   (poids)        : +1 unité (≈453 kg) → -3.92 mpg  [effet dominant]\n")
-cat("  qsec (temps ¼ mile) : +1 seconde          → +1.23 mpg  [voiture plus lente = plus économe]\n")
-cat("  am   (transmission) : manuelle vs auto    → +2.94 mpg  [manuelle consomme moins]\n\n")
-
-cat("Synthèse méthodologique :\n")
-cat("  - Stagewise : variables sélectionnées par corrélation maximale avec les résidus\n")
-cat("  - Arrêt automatique à l'étape 3 → modèle final : wt + qsec + am\n")
-cat("  - VIF < 3 pour les 3 variables → multicolinéarité acceptable\n")
-cat("  - LOOCV confirme une meilleure généralisation : +23% vs modèle complet\n\n")
-
-cat("Limites :\n")
-cat("  - Petit dataset (n=32) : résultats sensibles aux valeurs extrêmes\n")
-cat("  - Données de 1974 : les relations peuvent être différentes aujourd'hui\n")
-cat("  - Stagewise forward uniquement : ne reconsidère pas les variables déjà entrées\n")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ==========================================
-# 🔹 5) RÉGRESSIONS CROISÉES : Ilham
-# ==========================================
-# 🎯 Objectif :
-# - Évaluer la performance du modèle
-# - Tester la généralisation
-
-# ⚙️ Étapes :
-# - Diviser les données (train/test)
-# - Construire le modèle sur train
-# - Faire des prédictions sur test
-# - Calculer RMSE
-# - Appliquer LOOCV
-
-# 📊 Résultats attendus :
-# - RMSE
-# - Erreur LOOCV
-
-# 🧠 Interprétation à faire :
-# - RMSE faible = bon modèle ?
-# - Le modèle généralise-t-il bien ?
-# - Y a-t-il du surapprentissage ?
-
-
-
-
-# ==========================================
-# 🔹 6) COMPARAISON DES MODÈLES (ALL TEAM)
-# ==========================================
-# Étapes :
-# - Comparer AIC (stepwise vs modèle complet)
-# - Comparer RMSE
-# - Évaluer la stabilité
-
-# 🧠 Interprétation :
-# - Quel modèle est le meilleur ?
-# - Pourquoi ?
-
-# 👉 Responsable : TOUS
-
-
-# ==========================================
-# 🔹 7) CONCLUSION (ALL TEAM)
-# ==========================================
-# À rédiger :
-# - Variables les plus importantes
-# - Performance globale
-# - Capacité de généralisation
-# - Limites du modèle
-
-# 👉 Responsable : TOUS
+# RÉSULTAT OBTENU — ÉQUATION DU MODÈLE FINAL :
+#
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  MODÈLE RETENU : mpg ~ wt + qsec + am                                  ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+#   mpg^ = 9.618 + (-3.917)*wt + (1.226)*qsec + (2.936)*am
+#
+# PERFORMANCES DU MODÈLE FINAL :
+#   R² ajusté  : 0.834   (vs 0.807 pour le modèle complet → +3.4%)
+#   AIC        : 154.1   (vs 163.7 pour le modèle complet → -9.6 pts)
+#   RMSE LOOCV : 2.689 mpg (vs 3.490 mpg → gain de 23%)
+#
+# INTERPRÉTATION DES COEFFICIENTS :
+#
+#   wt   (poids du véhicule, en milliers de livres) :
+#   → Coefficient : -3.917
+#   → +1 unité de poids (≈ 453 kg) → diminution de 3.92 mpg
+#   → C'est l'effet DOMINANT : le poids est le principal prédicteur de la consommation.
+#   → Relation intuitive : voiture plus lourde = plus gourmande en carburant.
+#
+#   qsec (temps pour parcourir 1/4 de mile, en secondes) :
+#   → Coefficient : +1.226
+#   → +1 seconde supplémentaire → augmentation de 1.23 mpg
+#   → Plus la voiture est lente (qsec élevé), plus elle est économe.
+#   → Relation intuitive : voiture peu puissante = moteur moins gourmand.
+#
+#   am   (type de transmission : 0 = automatique, 1 = manuelle) :
+#   → Coefficient : +2.936
+#   → Transmission manuelle vs automatique → +2.94 mpg
+#   → Les voitures manuelles consomment moins que les automatiques.
+#   → Relation connue : les boîtes manuelles ont un meilleur rendement énergétique.
+#
+# SYNTHÈSE MÉTHODOLOGIQUE :
+#
+#   1. SÉLECTION STAGEWISE :
+#      → Variables sélectionnées par corrélation maximale avec les résidus courants
+#      → Arrêt automatique à l'étape 3 (p-value ≥ 0.25 pour carb à l'étape 4)
+#      → Modèle final : mpg ~ wt + qsec + am (3 variables sur 10)
+#
+#   2. VALIDATION MULTICOLLINÉARITÉ (Section 5) :
+#      → VIF < 3 pour les 3 variables → multicolinéarité ACCEPTABLE
+#      → Tests F détectent des dépendances mais les VIF restent faibles
+#      → Effet suppresseur confirmé mais sans impact sur la stabilité des coefficients
+#
+#   3. VALIDATION EXTERNE (Section 6) :
+#      → LOOCV confirme une meilleure généralisation : +23% vs modèle complet
+#      → Pas de surapprentissage : erreur LOOCV ≈ erreur résiduelle pour stagewise
+#
+#   4. COMPARAISON (Section 7) :
+#      → Stagewise domine sur TOUS les critères : R² ajusté, AIC, RMSE TT, RMSE LOOCV
+#
+# LIMITES DU MODÈLE :
+#
+#   - Petit dataset (n=32) : résultats sensibles aux valeurs extrêmes et au tirage
+#   - Données de 1974 : les relations entre poids/transmission/consommation
+#     peuvent être très différentes aujourd'hui (technologies moteur, hybrides, etc.)
+#   - Stagewise FORWARD uniquement : ne reconsidère pas les variables déjà entrées
+#     → Pourrait manquer des configurations alternatives tout aussi bonnes
+#   - Relation supposée linéaire : des effets non-linéaires ou d'interaction
+#     pourraient améliorer le modèle
