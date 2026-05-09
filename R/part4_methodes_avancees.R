@@ -241,7 +241,10 @@ summary(partial_model2)
 
 
 # Graphique de régression partielle 2
-plot(res_X2, res_Y2)
+plot(res_X2, res_Y2,
+     xlab = "Résidus qsec",
+     ylab = "Résidus mpg",
+     main = "Régression partielle de qsec sur mpg")
 abline(partial_model2, col="red")
 # ➡️ pente positive → relation positive
 # ➡️ dispersion dispersés → relation faible
@@ -269,8 +272,13 @@ res_X3 <- resid(model_X3)
 partial_model3 <- lm(res_Y3 ~ res_X3)
 summary(partial_model3)
 # ➡️ une augmentation d’un cylindre entraîne une diminution moyenne de mpg d’environ 1.78.
+# ➡️ cyl explique environ :
+#     ✔ 23.6% de la variance résiduelle de mpg
 
-plot(res_X3, res_Y3)
+plot(res_X3, res_Y3,
+     xlab = "Résidus cyl",
+     ylab = "Résidus mpg",
+     main = "Régression partielle de cyl sur mpg")
 abline(partial_model3, col="red")
 # ➡️ pente negative → relation negative
 # ➡️ dispersion dispersés → relation faible
@@ -281,6 +289,13 @@ summary(full_model3)
 # ➡️ Comparaison du Régression des résidus avec le modèle complet
 # les coefficients sont égaux :
 # ✔ la régression partielle est validée.
+
+
+# 🟩 Tableau comparatif final
+# Variable	Coefficient	p-value	R² partiel	Interprétation
+# hp	        -0.031	  0.0084	  0.2095	effet négatif modéré
+# qsec	      +0.927	  0.0087	  0.2076	effet positif modéré
+# cyl	        -1.785	  0.0048	  0.2359	effet négatif plus fort
 
 # ==========================================
 # 🔹 5) RÉGRESSIONS CROISÉES : Ilham
