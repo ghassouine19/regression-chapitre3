@@ -2,6 +2,7 @@
 # PROJET : PRATIQUE DE LA RÉGRESSION LINÉAIRE MULTIPLE
 # CHAPITRE 3.1 : DÉTECTION DE LA COLINÉARITÉ (GROUPE 1)
 # Base de données : mtcars
+# Groupe : Reda- Sara- Salma -Abderahman 
 # ==============================================================================
 
 # Chargement des données et packages
