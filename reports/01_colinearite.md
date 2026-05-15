@@ -1,5 +1,5 @@
 title: "3.1 — Détection de la colinéarité"
-
+Groupe: Sara - salma - reda - abderahman 
 ## Introduction
 
 En régression linéaire multiple, on cherche à établir une relation entre des variables explicatives (exogènes) et une variable à expliquer (endogène). Dans l'idéal, chaque variable apporte une information unique.
